@@ -1,4 +1,4 @@
-# RIS-enabled-SISO-Localization
+# RIS Enabled SISO Localization
 
 ## Paper
 This project is based on the paper "SISO RIS-Enabled Joint 3D Downlink Localizationand Synchronization". 
