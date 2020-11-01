@@ -9,8 +9,8 @@ rng(100)
 ris_phases = exp(1j*2*pi*rand(config.Mc^2,config.T));
 %% EStimation and CRB calculation
 estimator = Estimator(config,ris_phases,rand_seed);
-estimator = estimator.PEBcalc; % calculating crb bounds
 estimator = estimator.estimate; % calculating peb
+estimator = estimator.PEBcalc; % calculating crb bounds
 % calculating scaling of peb with number of ris elements
 config2=config; 
 config2.PointNum=4;

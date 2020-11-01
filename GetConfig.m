@@ -18,7 +18,7 @@ config.TxPower = 100e-3; % transmit power
 config.NPSD = 1e-3*10^(-174/10)*config.secFactor; % noise spectral density
 config.Noise_Factor = 10^(8/10); % noise factor
 % ------------------------
-config.NoiseSampleNum = 100; % number of iterations (this number is 5000 in the paper)
+config.NoiseSampleNum = 1000; % number of iterations (this number is 5000 in the paper)
 config.N_F = 2^12; % IFFT length for delay estimation
 config.N_F_tilde=2^8; % IFFT length for angle estimation
 config.PointNum=30; % number of points that is  considered in FIG 1

@@ -48,17 +48,17 @@ classdef SupPoint
         
         function k = getKv(obj,lambda)
             % calculates the wavenumber vector 
-            k = [(2*pi/lambda)*obj.sinEl(:).*obj.cosAz(:),(2*pi/lambda)*obj.sinEl(:).*obj.sinAz(:),(2*pi/lambda)*obj.cosEl(:)];
+            k = -1*[(2*pi/lambda)*obj.sinEl(:).*obj.cosAz(:),(2*pi/lambda)*obj.sinEl(:).*obj.sinAz(:),(2*pi/lambda)*obj.cosEl(:)];
         end
         function k = getKDazv(obj,lambda)
             % calculates the derivative of the wavenumber vector with
             % respect to Azimuth angle
-            k = [-(2*pi/lambda)*obj.sinEl(:).*obj.sinAz(:),(2*pi/lambda)*obj.sinEl(:).*obj.cosAz(:),zeros(length(obj.cosAz(:)),1)];
+            k = -1*[-(2*pi/lambda)*obj.sinEl(:).*obj.sinAz(:),(2*pi/lambda)*obj.sinEl(:).*obj.cosAz(:),zeros(length(obj.cosAz(:)),1)];
         end
         function k = getKDelv(obj,lambda)
             % calculates the derivative of the wavenumber vector with
             % respect to Elevation angle
-            k = [(2*pi/lambda)*obj.cosEl(:).*obj.cosAz(:),(2*pi/lambda)*obj.cosEl(:).*obj.sinAz(:),-(2*pi/lambda)*obj.sinEl(:)];
+            k = -1*[(2*pi/lambda)*obj.cosEl(:).*obj.cosAz(:),(2*pi/lambda)*obj.cosEl(:).*obj.sinAz(:),-(2*pi/lambda)*obj.sinEl(:)];
         end
         
         %%

@@ -82,9 +82,8 @@ classdef Estimator
             % this is the mainfunction that performs the estimation
             rng(obj.randomSeed)
             maxFinder = @(m1,f1, f2, f3) m1+(f2-f3)/(2*(f3+f2-2*f1));% quadrature approx, f1= f(m1), f2= f(m1-1), f3= f(m1+1)
-            urfuc = @(phi) exp(-1j*2*pi/obj.config.lambda*[sin(phi(1))*cos(phi(2)),sin(phi(1))*sin(phi(2)),cos(phi(1))]*obj.risElementLoc.')*obj.RisPhaseProfile; %calculates the ur vector for a given angle
+            urfuc = @(phi) exp(1j*2*pi/obj.config.lambda*[sin(phi(1))*cos(phi(2)),sin(phi(1))*sin(phi(2)),cos(phi(1))]*obj.risElementLoc.')*obj.RisPhaseProfile; %calculates the ur vector for a given angle
             delta_tau = @(t1,t2)  min([abs(t1-t2),abs(t1-t2+1/obj.config.Df),abs(t1-t2-1/obj.config.Df)]); % calculates the time error
-            
             tic
             for ix =1:obj.config.PointNum % this for loop goes through all the ue positions
                 fprintf('Estimation %.2f %% done! \n', (ix-1)/obj.config.PointNum *100);
@@ -116,8 +115,8 @@ classdef Estimator
                     Ytt = Yt .* repmat(exp(1j*2*pi*mod(obj.config.Df*Est_taur*[0:obj.config.Nsc-1].',1)),1,obj.config.T);
                     y_phi = sum(Ytt);
                     % IFFT search
-                    h_Gam = obj.IV.Gam*y_phi'./(y_phi*y_phi'); % finding the best gain as in
-                    Err = vecnorm(h_Gam*y_phi-obj.IV.Gam,2,2).^2;
+                    h_Gam = conj(obj.IV.Gam)*y_phi.'./vecnorm(obj.IV.Gam,2,2).^2; % finding the best gain h(.)
+                    Err = vecnorm(repmat(y_phi,size(obj.IV.Gam,1),1)-repmat(h_Gam,1,obj.config.T).*obj.IV.Gam,2,2).^2;
                     [~,mindx] = min(Err);
                     [l_tilde,m_tilde] = ind2sub([obj.config.N_F_tilde,obj.config.N_F_tilde],mindx);
                     % quadratic refinement
@@ -146,15 +145,13 @@ classdef Estimator
                         k1=k1*dk;
                         k3=k3*dk;
                     end
-                    k_bar = [k1,real(sqrt(1-k1^2-k3^2)),k3];
+                    k_bar = [k1,-real(sqrt(1-k1^2-k3^2)),k3];
                     
                     %% refinement based on quasi-newton algorithm
-                    squ = y_phi*y_phi';
-                    y0 = vecnorm((urfuc(k_bar)*y_phi'/squ)*y_phi-urfuc(k_bar)); %normalization factor
-                    likelihood_phi= @(phi)vecnorm((urfuc(phi)*y_phi'/squ)*y_phi-urfuc(phi))/y0;
-                    phi_tilde = fminunc(likelihood_phi,[acos(k_bar(3)),atan2(k_bar(2),k_bar(1))],obj.IV.options);
-                    k_bar = [sin(phi_tilde(1))*cos(phi_tilde(2)),sin(phi_tilde(1))*sin(phi_tilde(2)),cos(phi_tilde(1))];
-                    
+                    y0 = vecnorm(y_phi-(conj(urfuc(k_bar))*y_phi.'/(conj(urfuc(k_bar))*urfuc(k_bar).'))*urfuc(k_bar)); %normalization factor
+                    likelihood_phi= @(phi)vecnorm(y_phi-(conj(urfuc(phi))*y_phi.'/(conj(urfuc(phi))*urfuc(phi).'))*urfuc(phi))/y0;
+                    phi_tilde = fminunc(likelihood_phi,[acos(-1*k_bar(3)),atan2(-1*k_bar(2),-1*k_bar(1))],obj.IV.options);
+                    k_bar = [sin(phi_tilde(1))*cos(phi_tilde(2)),sin(phi_tilde(1))*sin(phi_tilde(2)),cos(phi_tilde(1))];%negative of nomalized wevenumber vector
                     %%
                     DiffTau = min(abs(Est_taur-Est_taub),abs(Est_taur+(1/obj.config.Df)-Est_taub));%to cover for an wrap arround becoause of Dt\approx 1/DF
                     d_fun = @(d) abs(vecnorm(k_bar*d)-vecnorm(k_bar*d-obj.IV.BsPos.getV(1,1))+obj.IV.BsPos.abs-DiffTau*obj.config.c);
@@ -169,8 +166,8 @@ classdef Estimator
                     obj.Error_Squared.DT(inr,ix) =  Etb^2;
                     obj.Error_Squared.tau_b(inr,ix) =  delta_tau(obj.IV.tau_b(ix)+Dt,Est_taub)^2;
                     obj.Error_Squared.tau_r(inr,ix) =  delta_tau(obj.IV.tau_r(ix)+Dt,Est_taur)^2;
-                    obj.Error_Squared.phi_az(inr,ix) =  (atan2(Est_position(2),Est_position(1))-atan2(obj.IV.k(ix,2),obj.IV.k(ix,1)))^2;
-                    obj.Error_Squared.phi_el(inr,ix) =  (acos(Est_position(3)/vecnorm(Est_position))-acos(obj.IV.k(ix,3)/vecnorm(obj.IV.k(ix,:))))^2;
+                    obj.Error_Squared.phi_az(inr,ix) =  (atan2(Est_position(2),Est_position(1))-atan2(-obj.IV.k(ix,2),-obj.IV.k(ix,1)))^2;
+                    obj.Error_Squared.phi_el(inr,ix) =  (acos(Est_position(3)/vecnorm(Est_position))-acos(-obj.IV.k(ix,3)/vecnorm(obj.IV.k(ix,:))))^2;
                 end
                 
                 timePassed=toc;
@@ -197,8 +194,8 @@ classdef Estimator
             Jc = cell(size(obj.IV.uePos.X));
             for ir=1:size(obj.IV.uePos.X,1)
                 for ic=1:size(obj.IV.uePos.X,2)
-                    Jc{ir,ic}=[J{1,1}(ir,ic),J{1,2}(ir,ic),J{1,3}(ir,ic),-1,0,0,0,0;...
-                        J{2,1}(ir,ic),J{2,2}(ir,ic),J{2,3}(ir,ic),-1,0,0,0,0;...
+                    Jc{ir,ic}=[J{1,1}(ir,ic),J{1,2}(ir,ic),J{1,3}(ir,ic),1,0,0,0,0;...
+                        J{2,1}(ir,ic),J{2,2}(ir,ic),J{2,3}(ir,ic),1,0,0,0,0;...
                         J{3,1}(ir,ic),J{3,2}(ir,ic),0,0,0,0,0,0;...
                         J{4,1}(ir,ic),J{4,2}(ir,ic),J{4,3}(ir,ic),0,0,0,0,0;...
                         0,0,0,0,1,0,0,0;0,0,0,0,0,1,0,0;0,0,0,0,0,0,1,0;0,0,0,0,0,0,0,1];
