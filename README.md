@@ -1,7 +1,7 @@
 # RIS Enabled SISO Localization
 
 ## Paper
-This project is based on the paper "SISO RIS-Enabled Joint 3D Downlink Localizationand Synchronization". 
+This project is based on the paper "SISO RIS-Enabled Joint 3D Downlink Localizationand Synchronization" that can be found on https://arxiv.org/abs/2011.02391 .
 
 ## Problem statement
 
