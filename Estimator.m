@@ -148,9 +148,10 @@ classdef Estimator
                     k_bar = [k1,-real(sqrt(1-k1^2-k3^2)),k3];
                     
                     %% refinement based on quasi-newton algorithm
-                    y0 = vecnorm(y_phi-(conj(urfuc(k_bar))*y_phi.'/(conj(urfuc(k_bar))*urfuc(k_bar).'))*urfuc(k_bar)); %normalization factor
+                    phi0 = [acos(-1*k_bar(3)),atan2(-1*k_bar(2),-1*k_bar(1))];
+                    y0 = vecnorm(y_phi-(conj(urfuc(phi0))*y_phi.'/(conj(urfuc(phi0))*urfuc(phi0).'))*urfuc(phi0)); %normalization factor
                     likelihood_phi= @(phi)vecnorm(y_phi-(conj(urfuc(phi))*y_phi.'/(conj(urfuc(phi))*urfuc(phi).'))*urfuc(phi))/y0;
-                    phi_tilde = fminunc(likelihood_phi,[acos(-1*k_bar(3)),atan2(-1*k_bar(2),-1*k_bar(1))],obj.IV.options);
+                    phi_tilde = fminunc(likelihood_phi,phi0,obj.IV.options);
                     k_bar = [sin(phi_tilde(1))*cos(phi_tilde(2)),sin(phi_tilde(1))*sin(phi_tilde(2)),cos(phi_tilde(1))];%negative of nomalized wevenumber vector
                     %%
                     DiffTau = min(abs(Est_taur-Est_taub),abs(Est_taur+(1/obj.config.Df)-Est_taub));%to cover for an wrap arround becoause of Dt\approx 1/DF
